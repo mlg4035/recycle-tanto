@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RecycleTanto
 
-## Getting Started
+Dummy-proof handwritten table scanner:
+- user takes a photo
+- app uploads to server
+- server submits OCR job
+- webhook marks job complete
+- app shows extracted table and saves locally for offline history
 
-First, run the development server:
+## Stack
+
+- Next.js App Router + TypeScript
+- Server persistence: SQLite (`better-sqlite3`)
+- Device persistence: IndexedDB (`dexie`)
+- Realtime status: SSE with polling fallback
+- PWA: manifest + service worker shell caching
+
+## Environment
+
+Copy `.env.example` to `.env.local` and fill values.
+
+### Required vars
+
+- `HANDWRITINGOCR_API_KEY`
+- `HANDWRITINGOCR_WEBHOOK_SECRET`
+- `HANDWRITINGOCR_BASE_URL` (example: `https://www.handwritingocr.com/api/v3`)
+- `HANDWRITINGOCR_ACTION` (`transcribe` recommended for plans without table extraction)
+- `APP_PUBLIC_BASE_URL`
+- `MOCK_OCR` (`1` for local mock mode, `0` for real API)
+
+## Run locally (mock mode, recommended first)
+
+1. Set `MOCK_OCR=1` in `.env.local`
+2. Install and run:
+
+```bash
+npm install
+npm run dev
+```
+
+3. Open `http://localhost:3000`
+4. Capture a photo
+5. You should see:
+   - immediate `processing` status
+   - completion in ~2 seconds (mock internal webhook)
+   - extracted table
+   - saved local scan in `/history`
+6. Optional dev tool:
+   - open `/dev/mock-webhook`
+   - enter a job ID to manually trigger mock webhook completion
+   - click **Load sample payload** to auto-load local sample JSON
+   - use **Queue Inspector** to review/retry/remove queued offline uploads
+
+Optional override for sample file paths:
+- `DEV_SAMPLE_PAYLOAD_FILES=c:/path/a.json,c:/path/b.json`
+
+## Run locally (real HandwritingOCR mode)
+
+1. Set `MOCK_OCR=0`
+2. Configure API key/secret/base URL
+3. Set `APP_PUBLIC_BASE_URL` to a public HTTPS URL that can receive webhooks
+4. Run app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Ensure your public URL forwards to local `http://localhost:3000`
+   - tunnel options: ngrok, cloudflared, localtunnel (optional, choose any)
+6. HandwritingOCR should call:
+   - `POST {APP_PUBLIC_BASE_URL}/api/webhooks/handwritingocr`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API endpoints
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `POST /api/jobs`
+  - multipart form-data: `submissionId`, `image`
+  - idempotent by `submissionId`
+- `GET /api/jobs/:id`
+- `GET /api/jobs/:id/events` (SSE)
+- `POST /api/webhooks/handwritingocr` (HMAC SHA-256 `X-Signature`)
 
-## Learn More
+## Android PWA notes
 
-To learn more about Next.js, take a look at the following resources:
+- Deploy over HTTPS to enable install + service workers.
+- Open in Android Chrome and choose **Add to Home screen**.
+- App now includes:
+  - install prompt banner when available
+  - update-ready banner for new service worker versions
+  - offline banner when network is unavailable
+  - queued-for-upload offline queue with retry
+  - improved caching for app shell and static assets
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Reliability behavior
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Server restarts safe (SQLite-backed jobs)
+- Browser refresh safe (job can be re-fetched by id)
+- Upload abuse guarded (10/min per IP)
+- Max file size 8MB server-side
+- Client compresses image to max long edge 1600px (JPEG quality 0.75)
+- OCR results are not printed in production logs
