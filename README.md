@@ -1,36 +1,26 @@
 # RecycleTanto
 
-Dummy-proof handwritten table scanner:
-- user takes a photo
-- app uploads to server
-- server submits OCR job
-- webhook marks job complete
-- app shows extracted table and saves locally for offline history
+A dummy-proof handwritten table scanner. Capture a photo, send it for OCR, and get an extracted table—with offline support, PWA install, and a local history.
+
+## Features
+
+- **One-tap capture** — Take a photo and the app uploads, submits an OCR job, and displays the extracted table
+- **Webhook-driven** — HandwritingOCR calls back when processing is done; no polling clutter
+- **Offline-first** — Queue uploads when offline; they retry automatically when back online
+- **Local history** — Scans saved in IndexedDB for browsing and export without the server
+- **PWA** — Install to home screen, shell caching, update banners, and offline indicators
 
 ## Stack
 
-- Next.js App Router + TypeScript
-- Server persistence: SQLite (`better-sqlite3`)
-- Device persistence: IndexedDB (`dexie`)
-- Realtime status: SSE with polling fallback
-- PWA: manifest + service worker shell caching
+- **Next.js** (App Router) + TypeScript
+- **Server persistence:** SQLite (`better-sqlite3`)
+- **Device persistence:** IndexedDB (`dexie`)
+- **Realtime status:** SSE with polling fallback
+- **PWA:** manifest + service worker shell caching
 
-## Environment
+## Quick start (mock mode)
 
-Copy `.env.example` to `.env.local` and fill values.
-
-### Required vars
-
-- `HANDWRITINGOCR_API_KEY`
-- `HANDWRITINGOCR_WEBHOOK_SECRET`
-- `HANDWRITINGOCR_BASE_URL` (example: `https://www.handwritingocr.com/api/v3`)
-- `HANDWRITINGOCR_ACTION` (`transcribe` recommended for plans without table extraction)
-- `APP_PUBLIC_BASE_URL`
-- `MOCK_OCR` (`1` for local mock mode, `0` for real API)
-
-## Run locally (mock mode, recommended first)
-
-1. Set `MOCK_OCR=1` in `.env.local`
+1. Copy `.env.example` to `.env.local` and set `MOCK_OCR=1`
 2. Install and run:
 
 ```bash
@@ -38,63 +28,59 @@ npm install
 npm run dev
 ```
 
-3. Open `http://localhost:3000`
-4. Capture a photo
-5. You should see:
-   - immediate `processing` status
-   - completion in ~2 seconds (mock internal webhook)
-   - extracted table
-   - saved local scan in `/history`
-6. Optional dev tool:
-   - open `/dev/mock-webhook`
-   - enter a job ID to manually trigger mock webhook completion
-   - click **Load sample payload** to auto-load local sample JSON
-   - use **Queue Inspector** to review/retry/remove queued offline uploads
+3. Open `http://localhost:3000`, capture a photo, and see the mock flow complete in ~2 seconds
+4. Optional: use `/dev/mock-webhook` to trigger webhooks manually or inspect the offline queue
 
-Optional override for sample file paths:
-- `DEV_SAMPLE_PAYLOAD_FILES=c:/path/a.json,c:/path/b.json`
+## Environment variables
 
-## Run locally (real HandwritingOCR mode)
+| Variable | Description |
+|----------|-------------|
+| `HANDWRITINGOCR_API_KEY` | API key for HandwritingOCR |
+| `HANDWRITINGOCR_WEBHOOK_SECRET` | Secret for HMAC verification of webhook payloads |
+| `HANDWRITINGOCR_BASE_URL` | e.g. `https://www.handwritingocr.com/api/v3` |
+| `HANDWRITINGOCR_ACTION` | `transcribe` recommended for plans without table extraction |
+| `APP_PUBLIC_BASE_URL` | Public HTTPS URL for receiving webhooks |
+| `MOCK_OCR` | `1` for local mock mode, `0` for real API |
+
+Override sample payload paths (dev):  
+`DEV_SAMPLE_PAYLOAD_FILES=c:/path/a.json,c:/path/b.json`
+
+## Running with real HandwritingOCR
 
 1. Set `MOCK_OCR=0`
-2. Configure API key/secret/base URL
-3. Set `APP_PUBLIC_BASE_URL` to a public HTTPS URL that can receive webhooks
-4. Run app:
-
-```bash
-npm run dev
-```
-
-5. Ensure your public URL forwards to local `http://localhost:3000`
-   - tunnel options: ngrok, cloudflared, localtunnel (optional, choose any)
-6. HandwritingOCR should call:
+2. Configure API key, webhook secret, and base URL
+3. Set `APP_PUBLIC_BASE_URL` to a public HTTPS URL reachable by the OCR provider
+4. Expose localhost (e.g. ngrok, cloudflared) so HandwritingOCR can call:
    - `POST {APP_PUBLIC_BASE_URL}/api/webhooks/handwritingocr`
 
 ## API endpoints
 
-- `POST /api/jobs`
-  - multipart form-data: `submissionId`, `image`
-  - idempotent by `submissionId`
-- `GET /api/jobs/:id`
-- `GET /api/jobs/:id/events` (SSE)
-- `POST /api/webhooks/handwritingocr` (HMAC SHA-256 `X-Signature`)
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/jobs` | Create job (multipart: `submissionId`, `image`), idempotent by `submissionId` |
+| `GET` | `/api/jobs/:id` | Get job status |
+| `GET` | `/api/jobs/:id/events` | SSE stream for job updates |
+| `POST` | `/api/webhooks/handwritingocr` | Webhook receiver (HMAC SHA-256 `X-Signature`) |
 
-## Android PWA notes
+## Android PWA
 
-- Deploy over HTTPS to enable install + service workers.
-- Open in Android Chrome and choose **Add to Home screen**.
-- App now includes:
-  - install prompt banner when available
-  - update-ready banner for new service worker versions
-  - offline banner when network is unavailable
-  - queued-for-upload offline queue with retry
-  - improved caching for app shell and static assets
+- Deploy over HTTPS to enable install and service workers
+- Open in Chrome → **Add to Home screen**
+- Includes: install prompt, update-ready banner, offline banner, queued upload retry, app shell caching
 
-## Reliability behavior
+## Reliability
 
-- Server restarts safe (SQLite-backed jobs)
-- Browser refresh safe (job can be re-fetched by id)
-- Upload abuse guarded (10/min per IP)
-- Max file size 8MB server-side
-- Client compresses image to max long edge 1600px (JPEG quality 0.75)
-- OCR results are not printed in production logs
+- **Server restarts:** Jobs persisted in SQLite
+- **Browser refresh:** Job can be re-fetched by ID
+- **Rate limit:** 10 requests/min per IP
+- **Max file size:** 8MB server-side; client compresses to max 1600px long edge (JPEG 0.75)
+- **Logging:** OCR results not printed in production logs
+
+## Scripts
+
+```bash
+npm run dev    # Development server
+npm run build  # Production build
+npm run start  # Run production server
+npm run lint   # Run ESLint
+```
