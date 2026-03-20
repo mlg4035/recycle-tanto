@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build output
+.next
+out
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment (use -e or env file at runtime, never bake secrets into image)
+.env
+.env.*
+!.env.example
+
+# IDE and OS
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local data (database lives in volume at runtime)
+data
+
+# Misc
+*.md
+*.log
+npm-debug.log*
