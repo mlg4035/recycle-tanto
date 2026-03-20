@@ -23,8 +23,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Prepare writable app data dir
-RUN mkdir -p /app/data \
+# Create www-data user/group with Debian/Ubuntu-compatible UID/GID
+RUN addgroup -g 33 -S www-data \
+    && adduser -S -D -H -u 33 -G www-data www-data \
+    && mkdir -p /app/data \
     && chown -R www-data:www-data /app
 
 COPY --from=builder --chown=www-data:www-data /app/public ./public
