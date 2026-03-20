@@ -11,22 +11,64 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  let timer: NodeJS.Timeout | null = null;
 
-  const stream = new ReadableStream({
+  let timer: NodeJS.Timeout | null = null;
+  let closed = false;
+
+  const encoder = new TextEncoder();
+
+  const cleanup = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  const safeClose = (controller: ReadableStreamDefaultController<Uint8Array>) => {
+    if (closed) return;
+    closed = true;
+    cleanup();
+    try {
+      controller.close();
+    } catch {
+      // ignore: controller may already be closed
+    }
+  };
+
+  const safeEnqueue = (
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    chunk: Uint8Array,
+  ) => {
+    if (closed) return false;
+    try {
+      controller.enqueue(chunk);
+      return true;
+    } catch {
+      closed = true;
+      cleanup();
+      return false;
+    }
+  };
+
+  const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const pushUpdate = () => {
+        if (closed) return;
+
         const job = getJobById(id);
+
         if (!job) {
-          controller.enqueue(
-            new TextEncoder().encode(encodeSse("error", { error: "Job not found" })),
+          safeEnqueue(
+            controller,
+            encoder.encode(encodeSse("error", { error: "Job not found" })),
           );
-          controller.close();
+          safeClose(controller);
           return;
         }
 
-        controller.enqueue(
-          new TextEncoder().encode(
+        const ok = safeEnqueue(
+          controller,
+          encoder.encode(
             encodeSse("status", {
               id: job.id,
               status: job.status,
@@ -37,21 +79,27 @@ export async function GET(
           ),
         );
 
+        if (!ok) return;
+
         if (job.status === "processed" || job.status === "failed") {
-          controller.close();
+          safeClose(controller);
         }
       };
 
       pushUpdate();
-      timer = setInterval(pushUpdate, 800);
+
+      if (!closed) {
+        timer = setInterval(pushUpdate, 800);
+      }
 
       request.signal.addEventListener("abort", () => {
-        if (timer) clearInterval(timer);
-        controller.close();
+        safeClose(controller);
       });
     },
+
     cancel() {
-      if (timer) clearInterval(timer);
+      closed = true;
+      cleanup();
     },
   });
 
