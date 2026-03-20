@@ -107,7 +107,7 @@ export default function HistoryTablePage() {
       "実施日",
       "Saved",
       "Job",
-      "Total 数量",
+      "Total qty",
       ...categories,
     ];
     const body = rowsToExport.map((row) => [
