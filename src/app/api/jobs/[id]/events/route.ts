@@ -15,30 +15,51 @@ export async function GET(
 
   const stream = new ReadableStream({
     start(controller) {
+      let closed = false;
+      const safeClose = () => {
+        if (closed) return;
+        closed = true;
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      };
+
       const pushUpdate = () => {
+        if (closed) return;
         const job = getJobById(id);
         if (!job) {
           controller.enqueue(
             new TextEncoder().encode(encodeSse("error", { error: "Job not found" })),
           );
-          controller.close();
+          safeClose();
           return;
         }
 
-        controller.enqueue(
-          new TextEncoder().encode(
-            encodeSse("status", {
-              id: job.id,
-              status: job.status,
-              updatedAt: job.updatedAt,
-              resultJson: job.status === "processed" ? job.resultJson : undefined,
-              error: job.status === "failed" ? job.error : undefined,
-            }),
-          ),
-        );
+        try {
+          controller.enqueue(
+            new TextEncoder().encode(
+              encodeSse("status", {
+                id: job.id,
+                status: job.status,
+                updatedAt: job.updatedAt,
+                resultJson: job.status === "processed" ? job.resultJson : undefined,
+                error: job.status === "failed" ? job.error : undefined,
+              }),
+            ),
+          );
+        } catch {
+          safeClose();
+          return;
+        }
 
         if (job.status === "processed" || job.status === "failed") {
-          controller.close();
+          safeClose();
         }
       };
 
@@ -46,8 +67,7 @@ export async function GET(
       timer = setInterval(pushUpdate, 800);
 
       request.signal.addEventListener("abort", () => {
-        if (timer) clearInterval(timer);
-        controller.close();
+        safeClose();
       });
     },
     cancel() {
