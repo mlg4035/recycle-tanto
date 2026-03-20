@@ -50,7 +50,7 @@ export default function HistoryPhotosPage() {
         </Link>
       </div>
 
-      {items.length === 0 ? <p className="text-sm text-zinc-600">No saved scans yet.</p> : null}
+      {items.length === 0 ? <p className="text-sm text-zinc-600">No saved scans as yet.</p> : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
