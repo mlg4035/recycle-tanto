@@ -1,13 +1,30 @@
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - app-data:/app/data
-    env_file:
-      - .env.local
+  recycletanto:
+    container_name: recycletanto
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      MOCK_OCR: 0
+      HANDWRITINGOCR_API_KEY: ${HANDWRITINGOCR_API_KEY}
+      HANDWRITINGOCR_WEBHOOK_SECRET: ${HANDWRITINGOCR_WEBHOOK_SECRET}
+      HANDWRITINGOCR_BASE_URL: ${HANDWRITINGOCR_BASE_URL}
+      APP_PUBLIC_BASE_URL: https://tanto.apphaven.net
+      HANDWRITINGOCR_ACTION: transcribe
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 3
     restart: unless-stopped
+    volumes:
+      - /var/www/recycletanto/data:/app/data
+	env_file:
+      - .env.local
+    networks:
+      - proxy
 
-volumes:
-  app-data:
+networks:
+  proxy:
+    external: true
