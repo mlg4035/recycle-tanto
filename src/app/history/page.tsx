@@ -152,6 +152,9 @@ export default function HistoryPage() {
       <Link className="text-sm underline" href="/">
         Back to capture
       </Link>
+      <Link className="text-sm underline" href="/import">
+        Bulk import
+      </Link>
       <Link className="text-sm underline" href="/history/table">
         Open tabular view
       </Link>

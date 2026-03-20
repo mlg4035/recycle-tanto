@@ -1,9 +1,14 @@
-export async function compressImage(file: File): Promise<{
+/** Compress image from File or Blob (with filename for Blob) */
+export async function compressImage(
+  file: File | Blob,
+  filename?: string,
+): Promise<{
   blob: Blob;
   width: number;
   height: number;
 }> {
-  const bitmap = await createImageBitmap(file);
+  const f = file instanceof File ? file : new File([file], filename ?? "image.jpg", { type: file.type || "image/jpeg" });
+  const bitmap = await createImageBitmap(f);
   const maxEdge = 1600;
   const longEdge = Math.max(bitmap.width, bitmap.height);
   const scale = longEdge > maxEdge ? maxEdge / longEdge : 1;

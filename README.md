@@ -9,6 +9,7 @@ A dummy-proof handwritten table scanner. Capture a photo, send it for OCR, and g
 - **Offline-first** — Queue uploads when offline; they retry automatically when back online
 - **Local history** — Scans saved in IndexedDB for browsing and export without the server
 - **PWA** — Install to home screen, shell caching, update banners, and offline indicators
+- **Bulk import** — Upload multiple images from PC (drag-drop) or select from Google Drive
 
 ## Stack
 
@@ -41,6 +42,9 @@ npm run dev
 | `HANDWRITINGOCR_ACTION` | `transcribe` recommended for plans without table extraction |
 | `APP_PUBLIC_BASE_URL` | Public HTTPS URL for receiving webhooks |
 | `MOCK_OCR` | `1` for local mock mode, `0` for real API |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | OAuth client ID for Google Drive picker (bulk import) |
+| `NEXT_PUBLIC_GOOGLE_APP_ID` | (Optional) Google Cloud project number for Drive Picker |
+| `NEXT_PUBLIC_GOOGLE_API_KEY` | (Optional) API key for Drive Picker |
 
 Override sample payload paths (dev):  
 `DEV_SAMPLE_PAYLOAD_FILES=c:/path/a.json,c:/path/b.json`
@@ -61,6 +65,13 @@ Override sample payload paths (dev):
 | `GET` | `/api/jobs/:id` | Get job status |
 | `GET` | `/api/jobs/:id/events` | SSE stream for job updates |
 | `POST` | `/api/webhooks/handwritingocr` | Webhook receiver (HMAC SHA-256 `X-Signature`) |
+
+## Bulk import (PC + Google Drive)
+
+- **From PC:** Go to `/import`, select or drag-drop multiple images (JPEG, PNG, WebP), then click **Start import**
+- **From Google Drive:** Click **Open Google Drive picker**, sign in, select images. Requires `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `.env.local`
+- For Drive: Create a [Google Cloud project](https://console.cloud.google.com/), enable **Google Picker API** and **Google Drive API**, create OAuth 2.0 credentials (Web application), add your origin to authorized JavaScript origins
+- Optionally set `NEXT_PUBLIC_GOOGLE_APP_ID` (project number) and `NEXT_PUBLIC_GOOGLE_API_KEY` if the picker requires them
 
 ## Android PWA
 

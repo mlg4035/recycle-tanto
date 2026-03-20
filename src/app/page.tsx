@@ -154,6 +154,10 @@ export default function Home() {
         <Link className="underline" href="/history">
           View history
         </Link>
+        {" · "}
+        <Link className="underline" href="/import">
+          Bulk import
+        </Link>
       </p>
 
       <CameraCapture disabled={Boolean(job && job.status === "processing")} onCaptured={onCaptured} />
