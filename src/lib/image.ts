@@ -7,49 +7,66 @@ export async function compressImage(
   width: number;
   height: number;
 }> {
-  const f = file instanceof File ? file : new File([file], filename ?? "image.jpg", { type: file.type || "image/jpeg" });
-  // Respect EXIF orientation (common on phone cameras)
-  let bitmap: ImageBitmap;
+  const f =
+    file instanceof File
+      ? file
+      : new File([file], filename ?? "image.jpg", {
+          type: file.type || "image/jpeg",
+        });
+
+  const objectUrl = URL.createObjectURL(f);
+
   try {
-    bitmap = await createImageBitmap(f, { imageOrientation: "from-image" });
-  } catch {
-    bitmap = await createImageBitmap(f);
+    const img = await loadImage(objectUrl);
+
+    const maxEdge = 1600;
+    const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+    const scale = longEdge > maxEdge ? maxEdge / longEdge : 1;
+
+    const width = Math.max(1, Math.round(img.naturalWidth * scale));
+    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Canvas context unavailable");
+    }
+
+    // Composite onto white before JPEG export
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (value) => {
+          if (!value) {
+            reject(new Error("Image compression failed"));
+            return;
+          }
+          resolve(value);
+        },
+        "image/jpeg",
+        0.75,
+      );
+    });
+
+    return { blob, width, height };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
   }
-  const maxEdge = 1600;
-  const longEdge = Math.max(bitmap.width, bitmap.height);
-  const scale = longEdge > maxEdge ? maxEdge / longEdge : 1;
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+}
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx =
-    canvas.getContext("2d", { colorSpace: "srgb" }) ??
-    canvas.getContext("2d");
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
 
-  if (!ctx) {
-    throw new Error("Canvas context unavailable");
-  }
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image for compression"));
 
-  // JPEG has no alpha: transparent PNG/WebP areas become black unless we composite on white
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, width, height);
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (value) => {
-        if (!value) {
-          reject(new Error("Image compression failed"));
-          return;
-        }
-        resolve(value);
-      },
-      "image/jpeg",
-      0.75,
-    );
+    img.src = src;
   });
-
-  return { blob, width, height };
 }
