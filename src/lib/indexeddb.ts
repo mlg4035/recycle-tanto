@@ -16,6 +16,7 @@ export type QueuedUpload = {
   submissionId: string;
   filename: string;
   imageBlob: Blob;
+  jobId?: string;
 };
 
 class ScanDatabase extends Dexie {
@@ -24,12 +25,19 @@ class ScanDatabase extends Dexie {
 
   constructor() {
     super("recycletanto-scans");
+
     this.version(1).stores({
       scans: "++localId, createdAt, sourceJobId",
     });
+
     this.version(2).stores({
       scans: "++localId, createdAt, sourceJobId",
       uploads: "++queueId, createdAt, submissionId",
+    });
+
+    this.version(3).stores({
+      scans: "++localId, createdAt, sourceJobId",
+      uploads: "++queueId, createdAt, submissionId, jobId",
     });
   }
 }
@@ -68,12 +76,44 @@ export async function listQueuedUploads() {
   return scanDb.uploads.orderBy("createdAt").toArray();
 }
 
-export async function removeQueuedUpload(queueId: number) {
-  await scanDb.uploads.delete(queueId);
+export async function getQueuedUpload(queueId: number) {
+  return scanDb.uploads.get(queueId);
 }
 
 export async function getQueuedUploadCount() {
   return scanDb.uploads.count();
+}
+
+export async function getQueuedUploadBySubmissionId(submissionId: string) {
+  return scanDb.uploads.where("submissionId").equals(submissionId).first();
+}
+
+export async function getQueuedUploadByJobId(jobId: string) {
+  return scanDb.uploads.where("jobId").equals(jobId).first();
+}
+
+export async function attachJobIdToQueuedUpload(submissionId: string, jobId: string) {
+  const item = await getQueuedUploadBySubmissionId(submissionId);
+  if (!item?.queueId) return;
+  await scanDb.uploads.update(item.queueId, { jobId });
+}
+
+export async function removeQueuedUpload(queueId: number) {
+  await scanDb.uploads.delete(queueId);
+}
+
+export async function removeQueuedUploadBySubmissionId(submissionId: string) {
+  const item = await getQueuedUploadBySubmissionId(submissionId);
+  if (item?.queueId) {
+    await scanDb.uploads.delete(item.queueId);
+  }
+}
+
+export async function removeQueuedUploadByJobId(jobId: string) {
+  const item = await getQueuedUploadByJobId(jobId);
+  if (item?.queueId) {
+    await scanDb.uploads.delete(item.queueId);
+  }
 }
 
 export async function clearQueuedUploads() {
