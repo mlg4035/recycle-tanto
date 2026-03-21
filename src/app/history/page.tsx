@@ -145,7 +145,7 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">Scan History</h1>
+      <h1 className="text-2xl font-semibold">Scan History New</h1>
       <p className="text-sm text-zinc-600">
         Sorted by 実施日 when available.
       </p>
