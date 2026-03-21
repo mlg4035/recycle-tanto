@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import {
+  attachJobIdToQueuedUpload,
   getQueuedUploadCount,
   listQueuedUploads,
-  removeQueuedUpload,
 } from "@/lib/indexeddb";
 import { submitJobUpload } from "@/lib/jobs-client";
 
@@ -47,9 +47,11 @@ export function UploadQueueSync() {
       flushingRef.current = true;
       try {
         const queued = await listQueuedUploads();
+
         for (const item of queued) {
           if (!navigator.onLine) break;
           if (!item.queueId) continue;
+          if (item.jobId) continue;
 
           try {
             const job = await submitJobUpload({
@@ -57,13 +59,17 @@ export function UploadQueueSync() {
               imageBlob: item.imageBlob,
               filename: item.filename,
             });
+
+            await attachJobIdToQueuedUpload(item.submissionId, job.id);
+
             window.localStorage.setItem("activeJobId", job.id);
+
             dispatchQueuedUploadSubmitted({
               job,
               imageBlob: item.imageBlob,
               submissionId: item.submissionId,
             });
-            await removeQueuedUpload(item.queueId);
+
             await publishCount();
           } catch {
             // Stop on first failure to avoid hammering network/server.
@@ -82,9 +88,11 @@ export function UploadQueueSync() {
     const onOnline = () => {
       void flushQueue();
     };
+
     const interval = window.setInterval(() => {
       void flushQueue();
     }, 15000);
+
     window.addEventListener("online", onOnline);
     window.addEventListener("recycletanto-flush-queue", onOnline);
 
