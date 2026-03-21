@@ -103,13 +103,13 @@ export default function Home() {
   }, []);
 
   const onCaptured = useCallback(
-  async (data: { blob: Blob; filename: string }) => {
-    console.log("ONCAPTURED PATCH ACTIVE", {
-      time: new Date().toISOString(),
-      filename: data.filename,
-      size: data.blob.size,
-      type: data.blob.type,
-    });
+    async (data: { blob: Blob; filename: string }) => {
+      console.log("ONCAPTURED PATCH ACTIVE", {
+        time: new Date().toISOString(),
+        filename: data.filename,
+        size: data.blob.size,
+        type: data.blob.type,
+      });
 
     setError(null);
     setNotice(null);
@@ -136,7 +136,7 @@ export default function Home() {
         createdAt: Date.now(),
         submissionId,
         filename: data.filename,
-        imageBlob: data.blob,
+        imageBlob: new Blob(["test"], { type: "text/plain" }),
       });
     
       console.log("enqueue upload complete", { queueId });
