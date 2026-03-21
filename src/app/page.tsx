@@ -103,64 +103,84 @@ export default function Home() {
   }, []);
 
   const onCaptured = useCallback(
-    async (data: { blob: Blob; filename: string }) => {
-      setError(null);
-      setNotice(null);
-      setTable(null);
-      setRawResultJson("");
-      setSavedLocalId(null);
-      setJob(null);
+  async (data: { blob: Blob; filename: string }) => {
+    console.log("ONCAPTURED PATCH ACTIVE", {
+      time: new Date().toISOString(),
+      filename: data.filename,
+      size: data.blob.size,
+      type: data.blob.type,
+    });
 
-      hasSavedRef.current = false;
-      photoBlobRef.current = data.blob;
+    setError(null);
+    setNotice(null);
+    setTable(null);
+    setRawResultJson("");
+    setSavedLocalId(null);
+    setJob(null);
 
-      const submissionId = crypto.randomUUID();
-      submissionIdRef.current = submissionId;
+    hasSavedRef.current = false;
+    photoBlobRef.current = data.blob;
 
-      await enqueueUpload({
-        createdAt: Date.now(),
+    const submissionId = crypto.randomUUID();
+    submissionIdRef.current = submissionId;
+
+    console.log("about to enqueue upload");
+
+    await enqueueUpload({
+      createdAt: Date.now(),
+      submissionId,
+      filename: data.filename,
+      imageBlob: data.blob,
+    });
+
+    console.log("enqueue upload complete");
+
+    await publishQueueCount();
+
+    const triggerQueueFlush = () => {
+      window.dispatchEvent(new Event("recycletanto-flush-queue"));
+    };
+
+    if (!navigator.onLine) {
+      triggerQueueFlush();
+      setNotice("Queued for upload. It will retry when online.");
+      return;
+    }
+
+    try {
+      const nextJob = await submitJobUpload({
         submissionId,
-        filename: data.filename,
         imageBlob: data.blob,
+        filename: data.filename,
       });
 
-      await publishQueueCount();
+      console.log("submitJobUpload complete", nextJob);
 
-      const triggerQueueFlush = () => {
-        window.dispatchEvent(new Event("recycletanto-flush-queue"));
-      };
+      await attachJobIdToQueuedUpload(submissionId, nextJob.id);
+
+      console.log("attachJobIdToQueuedUpload complete", {
+        submissionId,
+        jobId: nextJob.id,
+      });
+
+      setJob(nextJob);
+      window.localStorage.setItem("activeJobId", nextJob.id);
+      setNotice("Upload sent. Processing started.");
+
+      triggerQueueFlush();
+    } catch (err) {
+      console.error("onCaptured failed", err);
 
       if (!navigator.onLine) {
         triggerQueueFlush();
         setNotice("Queued for upload. It will retry when online.");
-        return;
+      } else {
+        setError("Upload failed");
       }
-
-      try {
-        const nextJob = await submitJobUpload({
-          submissionId,
-          imageBlob: data.blob,
-          filename: data.filename,
-        });
-
-        await attachJobIdToQueuedUpload(submissionId, nextJob.id);
-
-        setJob(nextJob);
-        window.localStorage.setItem("activeJobId", nextJob.id);
-        setNotice("Upload sent. Processing started.");
-
-        triggerQueueFlush();
-      } catch {
-        if (!navigator.onLine) {
-          triggerQueueFlush();
-          setNotice("Queued for upload. It will retry when online.");
-        } else {
-          setError("Upload failed");
-        }
-      }
-    },
-    [publishQueueCount],
-  );
+    }
+  },
+  [publishQueueCount],
+);
 
   const onJobUpdate = useCallback(async (updated: JobResponse) => {
     setJob(updated);
