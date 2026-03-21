@@ -23,12 +23,25 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">History Test</h1>
+      <h1 className="text-2xl font-semibold">History</h1>
 
-      <Link className="underline" href="/">
-        Back to capture
-      </Link>
-
+      <div className="flex flex-wrap gap-4 text-sm">
+        <Link className="underline" href="/">
+          Back to capture
+        </Link>
+        <Link className="underline" href="/history">
+          History
+        </Link>
+        <Link className="underline" href="/history/photos">
+          Photo gallery
+        </Link>
+        <Link className="underline" href="/history/table">
+          Tabular view
+        </Link>
+        <Link className="underline" href="/import">
+          Bulk import
+        </Link>
+      </div>
       {error ? <p>Failed to load scans: {error}</p> : null}
 
       <p>Count: {scans.length}</p>
