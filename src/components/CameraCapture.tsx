@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import { compressImage } from "@/lib/image";
 
 type Props = {
   onCaptured: (data: { blob: Blob; filename: string }) => void;
@@ -23,16 +21,19 @@ export function CameraCapture({ onCaptured, disabled }: Props) {
   async function onInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+
     setBusy(true);
     setError(null);
+
     try {
-      const compressed = await compressImage(file);
-      const url = URL.createObjectURL(compressed.blob);
+      const url = URL.createObjectURL(file);
+
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(url);
+
       onCaptured({
-        blob: compressed.blob,
-        filename: file.name || "capture.jpg",
+        blob: file,
+        filename: file.name || "upload.jpg",
       });
     } catch {
       setError("Upload failed");
@@ -44,7 +45,7 @@ export function CameraCapture({ onCaptured, disabled }: Props) {
 
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-zinc-300 p-4">
-      <label className="text-sm font-medium">Capture photo</label>
+      <label className="text-sm font-medium">Upload photo</label>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -52,15 +53,12 @@ export function CameraCapture({ onCaptured, disabled }: Props) {
         disabled={disabled || busy}
         onChange={onInputChange}
       />
-      {busy ? <p className="text-sm">Compressing image…</p> : null}
+      {busy ? <p className="text-sm">Preparing image…</p> : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       {previewUrl ? (
-        <Image
+        <img
           src={previewUrl}
-          alt="Captured preview"
-          width={400}
-          height={300}
-          unoptimized
+          alt="Upload preview"
           className="max-h-64 w-auto rounded-md object-contain"
         />
       ) : null}
