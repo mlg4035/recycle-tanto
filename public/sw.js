@@ -1,6 +1,5 @@
-const SHELL_CACHE = "recycletanto-shell-v2";
-const RUNTIME_CACHE = "recycletanto-runtime-v2";
-const API_CACHE = "recycletanto-api-v2";
+const SHELL_CACHE = "recycletanto-shell-v3";
+const RUNTIME_CACHE = "recycletanto-runtime-v3";
 const SHELL_URLS = ["/", "/history", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -19,8 +18,7 @@ self.addEventListener("activate", (event) => {
             .filter(
               (key) =>
                 key !== SHELL_CACHE &&
-                key !== RUNTIME_CACHE &&
-                key !== API_CACHE,
+                key !== RUNTIME_CACHE,
             )
             .map((key) => caches.delete(key)),
         ),
@@ -66,17 +64,11 @@ async function networkFirst(request, fallbackPath) {
   }
 }
 
+/** Job status + SSE must not be cached — stale JSON breaks polling; SSE streams break Cache API. */
 async function networkFirstApi(request) {
-  const cache = await caches.open(API_CACHE);
   try {
-    const response = await fetch(request);
-    if (response && response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
+    return await fetch(request);
   } catch {
-    const cached = await cache.match(request);
-    if (cached) return cached;
     return new Response(JSON.stringify({ error: "Offline" }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
@@ -97,6 +89,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (isSameOrigin && url.pathname.startsWith("/api/jobs/")) {
+    // EventSource (SSE) must bypass SW logic — intercepting breaks the stream and triggers polling fallback.
+    if (url.pathname.endsWith("/events")) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(networkFirstApi(request));
     return;
   }
