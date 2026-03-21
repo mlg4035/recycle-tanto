@@ -41,16 +41,23 @@ export default function HistoryPhotosPage() {
       <p className="text-sm text-zinc-600">
         Confirm uploaded images against extracted results.
       </p>
-      <div className="flex gap-4 text-sm">
+
+      <div className="flex flex-wrap gap-4 text-sm">
+        <Link className="underline" href="/">
+          Back to capture
+        </Link>
         <Link className="underline" href="/history">
-          Back to history
+          History
+        </Link>
+        <Link className="underline" href="/history/photos">
+          Photo gallery
         </Link>
         <Link className="underline" href="/history/table">
-          Tabular history
+          Tabular view
         </Link>
       </div>
 
-      {items.length === 0 ? <p className="text-sm text-zinc-600">No saved scans as yet.</p> : null}
+      {items.length === 0 ? <p className="text-sm text-zinc-600">No saved scans yet.</p> : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
