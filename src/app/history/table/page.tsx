@@ -136,15 +136,18 @@ export default function HistoryTablePage() {
       <p className="text-sm text-zinc-600">
         10 files per page. Click headers to sort.
       </p>
-      <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm">
+        <Link className="underline" href="/">
+          Back to capture
+        </Link>
         <Link className="underline" href="/history">
-          Back to history cards
+          History
         </Link>
         <Link className="underline" href="/history/photos">
           Photo gallery
         </Link>
-        <Link className="underline" href="/">
-          Back to capture
+        <Link className="underline" href="/history/table">
+          Tabular view
         </Link>
       </div>
       <div className="flex gap-2">
