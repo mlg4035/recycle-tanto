@@ -8,7 +8,13 @@ export async function compressImage(
   height: number;
 }> {
   const f = file instanceof File ? file : new File([file], filename ?? "image.jpg", { type: file.type || "image/jpeg" });
-  const bitmap = await createImageBitmap(f);
+  // Respect EXIF orientation (common on phone cameras)
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(f, { imageOrientation: "from-image" });
+  } catch {
+    bitmap = await createImageBitmap(f);
+  }
   const maxEdge = 1600;
   const longEdge = Math.max(bitmap.width, bitmap.height);
   const scale = longEdge > maxEdge ? maxEdge / longEdge : 1;
@@ -18,13 +24,19 @@ export async function compressImage(
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
+  const ctx =
+    canvas.getContext("2d", { colorSpace: "srgb" }) ??
+    canvas.getContext("2d");
 
   if (!ctx) {
     throw new Error("Canvas context unavailable");
   }
 
+  // JPEG has no alpha: transparent PNG/WebP areas become black unless we composite on white
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
   ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (value) => {
