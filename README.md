@@ -19,6 +19,12 @@ A dummy-proof handwritten table scanner. Capture a photo, send it for OCR, and g
 - **Realtime status:** SSE with polling fallback
 - **PWA:** manifest + service worker shell caching
 
+## Local development (important)
+
+- **Browser → API:** All `/api/...` calls go to the **same origin** as the page (`http://localhost:3000` when you use `npm run dev`). They do not go to your VPS unless you open the app at your deployed URL.
+- **Webhooks:** HandwritingOCR calls `APP_PUBLIC_BASE_URL/api/webhooks/handwritingocr`. If `.env.local` has `APP_PUBLIC_BASE_URL=https://your-production-domain` while you run on **localhost**, webhooks hit **production**, not your local server — local jobs stay **“processing”** forever. Fix: use **`MOCK_OCR=1`**, or set `APP_PUBLIC_BASE_URL` to a **tunnel URL** (ngrok, cloudflared) that forwards to your machine.
+- **Service worker:** The PWA service worker is **disabled on localhost / `next dev`** so it cannot intercept API calls. On a real domain, `/public/sw.js` still applies.
+
 ## Quick start (mock mode)
 
 1. Copy `.env.example` to `.env.local` and set `MOCK_OCR=1`

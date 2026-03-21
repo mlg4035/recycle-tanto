@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
-import { isMockOcrEnabled } from "@/lib/env";
+import { getEnv, isMockOcrEnabled } from "@/lib/env";
 import {
   countRecentUploadAttempts,
   createOrGetJobBySubmission,
@@ -74,6 +74,32 @@ export async function POST(request: Request) {
 
     if (job.status === "processed" || job.status === "processing" || job.status === "failed") {
       return NextResponse.json({ job: toApiJob(job) });
+    }
+
+    if (!isMockOcrEnabled()) {
+      try {
+        const env = getEnv();
+        const webhookHost = new URL(env.APP_PUBLIC_BASE_URL).hostname.toLowerCase();
+        const rawHost = request.headers.get("host") ?? "";
+        const requestHost = rawHost.split(":")[0]?.toLowerCase() ?? "";
+        if (
+          requestHost &&
+          webhookHost !== requestHost &&
+          (requestHost === "localhost" || requestHost === "127.0.0.1")
+        ) {
+          console.warn(
+            "[recycletanto] APP_PUBLIC_BASE_URL is " +
+              env.APP_PUBLIC_BASE_URL +
+              " but this request is to " +
+              rawHost +
+              ". HandwritingOCR will POST webhooks to the URL in APP_PUBLIC_BASE_URL, " +
+              "so your local SQLite job will never update. Use MOCK_OCR=1 for local dev, " +
+              "or set APP_PUBLIC_BASE_URL to a tunnel URL (ngrok, cloudflared) that points here.",
+          );
+        }
+      } catch {
+        // getEnv may throw if misconfigured; submit path will surface errors
+      }
     }
 
     const submitResponse = await submitToHandwritingOcr({
