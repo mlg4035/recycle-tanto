@@ -74,7 +74,8 @@ export async function enqueueUpload(upload: QueuedUpload) {
 }
 
 export async function listQueuedUploads() {
-  return scanDb.uploads.orderBy("createdAt").toArray();
+  const items = await scanDb.uploads.toArray();
+  return items.sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export async function getQueuedUpload(queueId: number) {
