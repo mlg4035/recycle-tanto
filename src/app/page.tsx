@@ -103,13 +103,13 @@ export default function Home() {
   }, []);
 
   const onCaptured = useCallback(
-  async (data: { blob: Blob; filename: string }) => {
-    console.log("ONCAPTURED PATCH ACTIVE", {
-      time: new Date().toISOString(),
-      filename: data.filename,
-      size: data.blob.size,
-      type: data.blob.type,
-    });
+    async (data: { blob: Blob; filename: string }) => {
+      console.log("ONCAPTURED PATCH ACTIVE", {
+        time: new Date().toISOString(),
+        filename: data.filename,
+        size: data.blob.size,
+        type: data.blob.type,
+      });
 
     setError(null);
     setNotice(null);
@@ -124,16 +124,27 @@ export default function Home() {
     const submissionId = crypto.randomUUID();
     submissionIdRef.current = submissionId;
 
-    console.log("about to enqueue upload");
-
-    await enqueueUpload({
-      createdAt: Date.now(),
-      submissionId,
-      filename: data.filename,
-      imageBlob: data.blob,
-    });
-
-    console.log("enqueue upload complete");
+    try {
+      console.log("about to enqueue upload", {
+        submissionId,
+        filename: data.filename,
+        size: data.blob.size,
+        type: data.blob.type,
+      });
+    
+      const queueId = await enqueueUpload({
+        createdAt: Date.now(),
+        submissionId,
+        filename: data.filename,
+        imageBlob: new Blob(["test"], { type: "text/plain" }),
+      });
+    
+      console.log("enqueue upload complete", { queueId });
+    } catch (err) {
+      console.error("enqueueUpload failed", err);
+      setError(`enqueueUpload failed: ${String((err as Error)?.message || err)}`);
+      return;
+    }
 
     await publishQueueCount();
 
