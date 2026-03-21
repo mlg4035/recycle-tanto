@@ -17,7 +17,7 @@ export default function HistoryPage() {
       })
       .catch((err) => {
         console.error("listScans failed:", err);
-        setError("Failed to load scans");
+        setError(String(err?.message || err || "Unknown error"));
       });
   }, []);
 
@@ -29,7 +29,7 @@ export default function HistoryPage() {
         Back to capture
       </Link>
 
-      {error ? <p>{error}</p> : null}
+      {error ? <p>Failed to load scans: {error}</p> : null}
 
       <p>Count: {scans.length}</p>
 
