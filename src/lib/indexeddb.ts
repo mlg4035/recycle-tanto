@@ -49,7 +49,8 @@ export async function saveScan(scan: SavedScan) {
 }
 
 export async function listScans() {
-  return scanDb.scans.orderBy("createdAt").reverse().toArray();
+  const items = await scanDb.scans.toArray();
+  return items.sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function getScan(localId: number) {
