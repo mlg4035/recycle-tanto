@@ -49,8 +49,13 @@ export async function saveScan(scan: SavedScan) {
 }
 
 export async function listScans() {
-  const items = await scanDb.scans.toArray();
-  return items.sort((a, b) => b.createdAt - a.createdAt);
+  try {
+    const items = await scanDb.scans.toArray();
+    return items.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (err) {
+    console.error("indexeddb listScans failed", err);
+    throw err;
+  }
 }
 
 export async function getScan(localId: number) {
