@@ -45,7 +45,12 @@ class ScanDatabase extends Dexie {
 export const scanDb = new ScanDatabase();
 
 export async function saveScan(scan: SavedScan) {
-  return scanDb.scans.add(scan);
+  try {
+    return await scanDb.scans.add(scan);
+  } catch (err) {
+    console.error("indexeddb saveScan failed", err, scan);
+    throw err;
+  }
 }
 
 export async function listScans() {
@@ -75,7 +80,12 @@ export async function deleteScans(localIds: number[]) {
 }
 
 export async function enqueueUpload(upload: QueuedUpload) {
-  return scanDb.uploads.add(upload);
+  try {
+    return await scanDb.uploads.add(upload);
+  } catch (err) {
+    console.error("indexeddb enqueueUpload failed", err, upload);
+    throw err;
+  }
 }
 
 export async function listQueuedUploads() {
