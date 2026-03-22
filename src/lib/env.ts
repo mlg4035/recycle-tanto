@@ -36,3 +36,19 @@ export function getEnv() {
 export function isProd() {
   return process.env.NODE_ENV === "production";
 }
+
+/** Google Drive bulk import — server/runtime only (Docker-friendly; no NEXT_PUBLIC build-time dependency). */
+export function getGoogleDriveImportEnv() {
+  const trim = (v: string | undefined) => v?.trim() || undefined;
+  return {
+    clientId:
+      trim(process.env.GOOGLE_DRIVE_CLIENT_ID) ??
+      trim(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
+    appId:
+      trim(process.env.GOOGLE_DRIVE_APP_ID) ??
+      trim(process.env.NEXT_PUBLIC_GOOGLE_APP_ID),
+    apiKey:
+      trim(process.env.GOOGLE_DRIVE_API_KEY) ??
+      trim(process.env.NEXT_PUBLIC_GOOGLE_API_KEY),
+  };
+}
