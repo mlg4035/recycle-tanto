@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/www/recycletanto/data:/app/data
-	env_file:
+    env_file:
       - .env.local
     networks:
       - proxy

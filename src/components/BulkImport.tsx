@@ -81,7 +81,8 @@ export function BulkImport({
 
   const pickFromDrive = useCallback(async () => {
     setDriveError(null);
-    const clientId = googleClientIdProp || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId =
+      googleClientIdProp || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const appId = googleAppIdProp ?? process.env.NEXT_PUBLIC_GOOGLE_APP_ID;
     const apiKey = googleApiKeyProp ?? process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
     if (!clientId) {
