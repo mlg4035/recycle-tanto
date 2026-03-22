@@ -4,12 +4,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: 275380200225-hmjbfm6d606pd6v3fbr7935v2ga885ug.apps.googleusercontent.com
+        NEXT_PUBLIC_GOOGLE_API_KEY: AIzaSyDjs_3huw9HZcm8f1gANturi-yyrIpQnLU
+        NEXT_PUBLIC_GOOGLE_APP_ID: drivecleaner-490603
+        APP_PUBLIC_BASE_URL: https://tanto.apphaven.net
     environment:
       NODE_ENV: production
       MOCK_OCR: 0
       HANDWRITINGOCR_API_KEY: ${HANDWRITINGOCR_API_KEY}
       HANDWRITINGOCR_WEBHOOK_SECRET: ${HANDWRITINGOCR_WEBHOOK_SECRET}
       HANDWRITINGOCR_BASE_URL: ${HANDWRITINGOCR_BASE_URL}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: 275380200225-hmjbfm6d606pd6v3fbr7935v2ga885ug.apps.googleusercontent.com
+      NEXT_PUBLIC_GOOGLE_API_KEY: AIzaSyDjs_3huw9HZcm8f1gANturi-yyrIpQnLU
+      NEXT_PUBLIC_GOOGLE_APP_ID: drivecleaner-490603
       APP_PUBLIC_BASE_URL: https://tanto.apphaven.net
       HANDWRITINGOCR_ACTION: transcribe
     logging:
