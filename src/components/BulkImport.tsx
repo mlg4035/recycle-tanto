@@ -110,7 +110,9 @@ export function BulkImport({
       google?: {
         accounts?: { oauth2?: { initTokenClient: (c: { client_id: string; scope: string }) => { callback?: (r: { access_token?: string; error?: unknown }) => void; requestAccessToken: (opts?: { prompt?: string }) => void } } };
         picker?: {
+          Feature?: { MULTISELECT_ENABLED?: unknown };
           PickerBuilder: new () => {
+            enableFeature: (feature: unknown) => unknown;
             addView: (v: unknown) => unknown;
             setOAuthToken: (t: string) => unknown;
             setDeveloperKey?: (k: string) => unknown;
@@ -157,6 +159,7 @@ export function BulkImport({
       });
 
       type PickerBuilderInstance = {
+        enableFeature: (feature: unknown) => PickerBuilderInstance;
         addView: (v: unknown) => PickerBuilderInstance;
         setOAuthToken: (t: string) => PickerBuilderInstance;
         setDeveloperKey?: (k: string) => PickerBuilderInstance;
@@ -164,9 +167,12 @@ export function BulkImport({
         setCallback: (cb: (d: PickerData) => void) => PickerBuilderInstance;
         build: () => { setVisible: (v: boolean) => void };
       };
-      const PickerBuilderClass = google.picker!.PickerBuilder as new () => PickerBuilderInstance;
+      const pickerApi = google.picker!;
+      const multiselect = pickerApi.Feature?.MULTISELECT_ENABLED;
+      const PickerBuilderClass = pickerApi.PickerBuilder as new () => PickerBuilderInstance;
       let builder: PickerBuilderInstance = new PickerBuilderClass()
-        .addView(google.picker!.ViewId?.DOCS_IMAGES ?? "DOCS_IMAGES")
+        .enableFeature(multiselect ?? "multiselectEnabled")
+        .addView(pickerApi.ViewId?.DOCS_IMAGES ?? "DOCS_IMAGES")
         .setOAuthToken(accessToken)
         .setCallback(async (data: PickerData) => {
           const docs = data.docs ?? [];
@@ -261,6 +267,9 @@ export function BulkImport({
           >
             Open Google Drive picker
           </button>
+          <p className="text-xs text-zinc-500">
+            Use Ctrl+click (Windows) or ⌘+click (Mac) to select more than one file, then confirm in the picker.
+          </p>
           {driveError ? (
             <p className="text-sm text-red-600">{driveError}</p>
           ) : null}

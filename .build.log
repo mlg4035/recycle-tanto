@@ -1,0 +1,13 @@
+2026-03-22T09:05:35.472127 Project directory: /var/www/recycletanto
+2026-03-22T09:05:35.472442 Pulling project images
+2026-03-22T09:05:35.474985 ------------------------------
+2026-03-22T09:05:35.537519  recycletanto Skipped No image to be pulled
+2026-03-22T09:05:35.541409 ------------------------------
+2026-03-22T09:05:35.541527 Deploying project
+2026-03-22T09:05:35.542082 ------------------------------
+2026-03-22T09:05:35.605186  Container recycletanto Recreate 
+2026-03-22T09:05:35.751819  Container recycletanto Recreated 
+2026-03-22T09:05:35.752785  Container recycletanto Starting 
+2026-03-22T09:05:35.893291  Container recycletanto Started 
+2026-03-22T09:05:35.900076 ------------------------------
+2026-03-22T09:05:35.900116 Project deployed successfully
