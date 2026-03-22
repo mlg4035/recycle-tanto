@@ -13,7 +13,18 @@ function toBulkItems(files: FileList | File[]): BulkItem[] {
     .map((f) => ({ blob: f, filename: f.name }));
 }
 
-export function BulkImport() {
+type BulkImportProps = {
+  /** Passed from the server so Drive config is not only inlined at client build time. */
+  googleClientId?: string;
+  googleAppId?: string;
+  googleApiKey?: string;
+};
+
+export function BulkImport({
+  googleClientId: googleClientIdProp,
+  googleAppId: googleAppIdProp,
+  googleApiKey: googleApiKeyProp,
+}: BulkImportProps = {}) {
   const [mode, setMode] = useState<"pc" | "drive">("pc");
   const [items, setItems] = useState<BulkItem[]>([]);
   const [progress, setProgress] = useState<BulkProgress | null>(null);
@@ -70,9 +81,9 @@ export function BulkImport() {
 
   const pickFromDrive = useCallback(async () => {
     setDriveError(null);
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const appId = process.env.NEXT_PUBLIC_GOOGLE_APP_ID;
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    const clientId = googleClientIdProp || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const appId = googleAppIdProp ?? process.env.NEXT_PUBLIC_GOOGLE_APP_ID;
+    const apiKey = googleApiKeyProp ?? process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
     if (!clientId) {
       setDriveError("Google Drive is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to .env.local");
       return;
@@ -191,7 +202,7 @@ export function BulkImport() {
       const msg = err instanceof Error ? err.message : "Google Drive error";
       setDriveError(msg);
     }
-  }, []);
+  }, [googleClientIdProp, googleAppIdProp, googleApiKeyProp]);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 p-4">
